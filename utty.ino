@@ -42,8 +42,8 @@ void add_character(char c) {
         for (int i=0; i < WIDTH; ++i) {
             buffer[buffer_tail][i] = '\0';
         }
-        if (c == '\n') { return; };
     }
+    if (c == '\n' || c == '\r') { return; };
     buffer[buffer_tail][buffer_cursor] = c;
     ++buffer_cursor;
 }
@@ -76,7 +76,11 @@ void display_buffer() {
     display.setCursor(0, 0);
     for (int j=0; j < 6; ++j) {
         for (int i=0; i < WIDTH; ++i) {
-            display.print(buffer[line][i]);
+            if (buffer[line][i]) {
+                display.print(buffer[line][i]);
+            } else {
+                display.print(' ');
+            }
         }
         display.println();
         line = (line + 1) % MAX_BUFFER;
