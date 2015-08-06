@@ -4,14 +4,23 @@
 
 Adafruit_PCD8544 display = Adafruit_PCD8544(4, 5, 6, 7, 8);
 
-const int buttons[5] = {A3, A2, A1, 12, 10};
+const int MAX_BUTTONS = 6;
+const int buttons[MAX_BUTTONS] = {A3, A2, A1, 12, 11, 10};
+
+const int MAX_BUFFER = 64;
+const int WIDTH = 14;
+char buffer[MAX_BUFFER][WIDTH] = {};
+int buffer_tail = 0;
+int buffer_cursor = 0;
+int scroll_position = 6;
+
 
 void setup()   {
     pinMode(3, OUTPUT);
     digitalWrite(3, HIGH);
     pinMode(2, OUTPUT);
     digitalWrite(2, HIGH);
-    for (unsigned char button=0; button<5; ++button) {
+    for (unsigned char button=0; button < MAX_BUTTONS; ++button) {
         pinMode(buttons[button], INPUT_PULLUP);
     }
 
@@ -22,9 +31,21 @@ void setup()   {
     display.clearDisplay();
 
     display.setTextSize(0);
-    display.setTextWrap(true);
+    display.setTextWrap(false);
     display.setTextColor(BLACK, WHITE);
-    display.println("Hello!");
+}
+
+void add_character(char c) {
+    if (c == '\n' || buffer_cursor >= WIDTH) {
+        buffer_cursor = 0;
+        buffer_tail = (buffer_tail + 1) % MAX_BUFFER;
+        for (int i=0; i < WIDTH; ++i) {
+            buffer[buffer_tail][i] = '\0';
+        }
+        if (c == '\n') { return; };
+    }
+    buffer[buffer_tail][buffer_cursor] = c;
+    ++buffer_cursor;
 }
 
 void do_buttons() {
@@ -32,26 +53,43 @@ void do_buttons() {
 
     if (millis() - last_buttons < 300) { return; }
 
-    for (unsigned char button=0; button<5; ++button) {
+    for (unsigned char button=0; button<MAX_BUTTONS; ++button) {
         if (!digitalRead(buttons[button])) {
-            Serial.print("Button ");
-            Serial.print(button);
-            Serial.println();
+            switch (button) {
+                case 0:
+                    scroll_position = max(scroll_position - 1, 6);
+                    break;
+                case 5:
+                    scroll_position = min(scroll_position + 1, MAX_BUFFER - 1);
+                    break;
+            }
+            Serial.println(scroll_position);
             last_buttons = millis();
         }
     }
 }
 
+void display_buffer() {
+    int line = (buffer_tail - scroll_position) % MAX_BUFFER;
+    while (line < 0) { line += MAX_BUFFER; }
+
+    display.setCursor(0, 0);
+    for (int j=0; j < 6; ++j) {
+        for (int i=0; i < WIDTH; ++i) {
+            display.print(buffer[line][i]);
+        }
+        display.println();
+        line = (line + 1) % MAX_BUFFER;
+    }
+    display.display();
+}
+
 void loop() {
     do_buttons();
     while (Serial.available()) {
-        display.print((char)Serial.read());
+        add_character(Serial.read());
         do_buttons();
     }
-    display.display();
-    if (display.getCursorY() > display.height() - 5) {
-        display.setCursor(0, 0);
-        display.clearDisplay();
-    }
+    display_buffer();
     delay(10);
 }
