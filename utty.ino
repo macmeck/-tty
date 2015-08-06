@@ -4,7 +4,7 @@
 
 Adafruit_PCD8544 display = Adafruit_PCD8544(4, 5, 6, 7, 8);
 
-const int buttons[5] = {A3, A1, 13, 11, 10};
+const int buttons[5] = {A3, A2, A1, 12, 10};
 
 void setup()   {
     pinMode(3, OUTPUT);
@@ -28,12 +28,16 @@ void setup()   {
 }
 
 void do_buttons() {
+    static long last_buttons = 0;
+
+    if (millis() - last_buttons < 300) { return; }
+
     for (unsigned char button=0; button<5; ++button) {
         if (!digitalRead(buttons[button])) {
             Serial.print("Button ");
             Serial.print(button);
             Serial.println();
-            delay(200);
+            last_buttons = millis();
         }
     }
 }
