@@ -1,0 +1,16 @@
+syntax: glob
+*.pyc
+*~
+.*.swp
+docs/*
+build/*
+dist/*
+pygments/*
+werkzeug/*
+bin/*
+lib/*
+include/*
+local
+*.egg-info
+cache/*
+*.DS_Store
