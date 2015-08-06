@@ -13,6 +13,7 @@ char buffer[MAX_BUFFER][WIDTH] = {};
 int buffer_tail = 0;
 int buffer_cursor = 0;
 int scroll_position = 6;
+bool freeze = false;
 
 
 void setup()   {
@@ -59,6 +60,18 @@ void do_buttons() {
                 case 0:
                     scroll_position = max(scroll_position - 1, 6);
                     break;
+                case 1:
+                    scroll_position = max(scroll_position - 6, 6);
+                    break;
+                case 2:
+                    freeze = true;
+                    break;
+                case 3:
+                    freeze = false;
+                    break;
+                case 4:
+                    scroll_position = min(scroll_position + 6, MAX_BUFFER - 1);
+                    break;
                 case 5:
                     scroll_position = min(scroll_position + 1, MAX_BUFFER - 1);
                     break;
@@ -90,9 +103,11 @@ void display_buffer() {
 
 void loop() {
     do_buttons();
-    while (Serial.available()) {
-        add_character(Serial.read());
-        do_buttons();
+    if (!freeze) {
+        while (Serial.available()) {
+            add_character(Serial.read());
+            do_buttons();
+        }
     }
     display_buffer();
     delay(10);
